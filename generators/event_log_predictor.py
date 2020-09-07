@@ -11,75 +11,6 @@ from datetime import timedelta
 from support_modules import support as sup
 import time
 
-from multiprocessing import Pool
-
-def generate_trace(model, imp, parms, vectorizer):
-    x_ac_ngram = np.zeros(
-        (1, parms['dim']['time_dim']), dtype=np.float32)
-    x_rl_ngram = np.zeros(
-        (1, parms['dim']['time_dim']), dtype=np.float32)
-    if parms['one_timestamp']:
-        x_t_ngram = np.zeros(
-            (1, parms['dim']['time_dim'], 1), dtype=np.float32)
-    else:
-        x_t_ngram = np.zeros(
-            (1, parms['dim']['time_dim'], 2), dtype=np.float32)
-    if vectorizer in ['basic']:
-        inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram]
-    elif vectorizer in ['inter']:
-        x_inter_ngram = np.zeros(
-            (1, parms['dim']['time_dim'], len(parms['additional_columns'])), dtype=np.float32)
-        inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram, x_inter_ngram]
-    i = 1
-    x_trace = list()
-    while i < parms['max_trace_size']:
-        # predictions = self.model.predict([x_ac_ngram, x_rl_ngram, x_t_ngram])
-        start = time.time()
-        predictions = model.predict(inputs)
-        if imp == 'Random Choice':
-            # Use this to get a random choice following as PDF
-            pos = np.random.choice(
-                np.arange(0, len(predictions[0][0])),
-                p=predictions[0][0])
-            pos1 = np.random.choice(
-                np.arange(0, len(predictions[1][0])),
-                p=predictions[1][0])
-        elif imp == 'Arg Max':
-            # Use this to get the max prediction
-            pos = np.argmax(predictions[0][0])
-            pos1 = np.argmax(predictions[1][0])
-        # Check that the first prediction wont be the end of the trace
-        if (not x_trace) and (parms['index_ac'][pos] == 'end'):
-            continue
-        else:
-            if parms['one_timestamp']:
-                x_trace.append([pos, pos1, predictions[2][0][0]])
-            else:
-                x_trace.append([pos, pos1,
-                                predictions[2][0][0],
-                                predictions[2][0][1]])
-#            # Add prediction to n_gram
-            x_ac_ngram = np.append(x_ac_ngram, [[pos]], axis=1)
-            x_ac_ngram = np.delete(x_ac_ngram, 0, 1)
-            x_rl_ngram = np.append(x_rl_ngram, [[pos1]], axis=1)
-            x_rl_ngram = np.delete(x_rl_ngram, 0, 1)
-            x_t_ngram = np.append(x_t_ngram, [predictions[2]], axis=1)
-            x_t_ngram = np.delete(x_t_ngram, 0, 1)
-            if vectorizer in ['basic']:
-                inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram]
-            elif vectorizer in ['inter']:
-                x_inter_ngram = np.append(x_inter_ngram, [predictions[3]], axis=1)
-                x_inter_ngram = np.delete(x_inter_ngram, 0, 1)
-                inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram, x_inter_ngram]
-#            # Stop if the next prediction is the end of the trace
-#            # otherwise until the defined max_size
-            if parms['index_ac'][pos] == 'end':
-                break
-            i += 1
-        end = time.time()
-        print('full event:', (end - start), sep=' ')
-    return x_trace
-
 
 class EventLogPredictor():
 
@@ -108,31 +39,77 @@ class EventLogPredictor():
             max_trace_size (int): max size of the trace
         """
         sup.print_performed_task('Generating traces')
-
         generated_event_log = list()
-        # for case in range(0, parms['num_cases']):
-        pool = Pool(processes=4)
-        
-        start = time.time()
-        for i in range(0, 2):
-            result = pool.apply_async(generate_trace,
-                                 (self.model, self.imp, parms, vectorizer))
-            generated_event_log.append(result)
-            [result.wait(1000) for result in generated_event_log]
-            
-        print([result.get() for result in generated_event_log])
-        # for worker in pool._pool:
-        #     assert worker.is_alive()
-        # pool.close()
-        # pool.join()
-        # for case in range(0, 2):
-        #     start = time.time()
-        #     generated_event_log.extend(
-        #         self.decode_trace(parms,
-        #                           generate_trace(self.model, self.imp, parms, vectorizer),
-        #                           case))
-        end = time.time()
-        print('decoding:', (end - start), sep=' ')
+        for case in range(0, parms['num_cases']):
+            x_trace = list()
+            x_ac_ngram = np.zeros(
+                (1, parms['dim']['time_dim']), dtype=np.float32)
+            x_rl_ngram = np.zeros(
+                (1, parms['dim']['time_dim']), dtype=np.float32)
+            if parms['one_timestamp']:
+                x_t_ngram = np.zeros(
+                    (1, parms['dim']['time_dim'], 1), dtype=np.float32)
+            else:
+                x_t_ngram = np.zeros(
+                    (1, parms['dim']['time_dim'], 2), dtype=np.float32)
+            if vectorizer in ['basic']:
+                inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram]
+            elif vectorizer in ['inter']:
+                x_inter_ngram = np.zeros(
+                    (1, parms['dim']['time_dim'], len(parms['additional_columns'])), dtype=np.float32)
+                inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram, x_inter_ngram]
+            i = 1
+            # for _ in range(1, self.max_trace_size):
+            while i < self.max_trace_size:
+                # predictions = self.model.predict([x_ac_ngram, x_rl_ngram, x_t_ngram])
+                start = time.time()
+                predictions = self.model.predict(inputs)
+                if self.imp == 'Random Choice':
+                    # Use this to get a random choice following as PDF
+                    pos = np.random.choice(
+                        np.arange(0, len(predictions[0][0])),
+                        p=predictions[0][0])
+                    pos1 = np.random.choice(
+                        np.arange(0, len(predictions[1][0])),
+                        p=predictions[1][0])
+                elif self.imp == 'Arg Max':
+                    # Use this to get the max prediction
+                    pos = np.argmax(predictions[0][0])
+                    pos1 = np.argmax(predictions[1][0])
+                # Check that the first prediction wont be the end of the trace
+                if (not x_trace) and (parms['index_ac'][pos] == 'end'):
+                    continue
+                else:
+                    if parms['one_timestamp']:
+                        x_trace.append([pos, pos1, predictions[2][0][0]])
+                    else:
+                        x_trace.append([pos, pos1,
+                                        predictions[2][0][0],
+                                        predictions[2][0][1]])
+        #            # Add prediction to n_gram
+                    x_ac_ngram = np.append(x_ac_ngram, [[pos]], axis=1)
+                    x_ac_ngram = np.delete(x_ac_ngram, 0, 1)
+                    x_rl_ngram = np.append(x_rl_ngram, [[pos1]], axis=1)
+                    x_rl_ngram = np.delete(x_rl_ngram, 0, 1)
+                    x_t_ngram = np.append(x_t_ngram, [predictions[2]], axis=1)
+                    x_t_ngram = np.delete(x_t_ngram, 0, 1)
+                    if vectorizer in ['basic']:
+                        inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram]
+                    elif vectorizer in ['inter']:
+                        x_inter_ngram = np.append(x_inter_ngram, [predictions[3]], axis=1)
+                        x_inter_ngram = np.delete(x_inter_ngram, 0, 1)
+                        inputs = [x_ac_ngram, x_rl_ngram, x_t_ngram, x_inter_ngram]
+        #            # Stop if the next prediction is the end of the trace
+        #            # otherwise until the defined max_size
+                    if parms['index_ac'][pos] == 'end':
+                        break
+                    i += 1
+                end = time.time()
+                # print('full event:', (end - start), sep=' ')
+            start = time.time()
+            generated_event_log.extend(self.decode_trace(parms, x_trace, case))
+            end = time.time()
+            # print('decoding:', (end - start), sep=' ')
         sup.print_done_task()
         return generated_event_log
 

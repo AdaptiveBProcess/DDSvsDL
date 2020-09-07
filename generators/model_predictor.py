@@ -13,7 +13,7 @@ import configparser as cp
 from tensorflow.keras.models import load_model
 
 from support_modules import support as sup
-from generators import event_log_predictor1 as elp
+from generators import event_log_predictor as elp
 
 
 class ModelPredictor():

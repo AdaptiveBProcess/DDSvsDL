@@ -43,7 +43,7 @@ def main(argv):
     # External tools routes
     parameters['bimp_path'] = os.path.join(
         'generators', 'external_tools', 'bimp', 'qbp-simulator-engine.jar')
-    parameters['action'] = 'evaluate'
+    parameters['action'] = 'execute'
     parameters['folder'] = '20200804_142204829211'
     
     # Parameters setting manual fixed or catched by console
