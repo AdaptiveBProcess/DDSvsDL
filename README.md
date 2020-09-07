@@ -12,17 +12,19 @@ The evaluator assumes the input is composed by a case identifier, an activity la
 
 ### Evaluator inputs
 
-As inputs of the evaluator, in the input_files folder, it is required a subfolder named with the event-log name to evaluate. In this subfolder, must be located the testing partition used to evaluate the accuracy of the logs, a subfolder called generative_models, and another called simulation_models. The generative_models folder contains the best LSTM and GRU models found with the [DeepGenerator](https://github.com/AdaptiveBProcess/GenerativeLSTM) tool, and the simulation_models folder contains the best data-driven simulation models found with the [Simod](https://github.com/AdaptiveBProcess/Simod) tool. For ease of reproduction, we provide in this repository the folders and models used in the evaluation of the article. Likewise, we provide the complete event logs in the file "complete_logs.zip."
+In the input_files folder, it is required a subfolder named with the event-log name to evaluate. In this subfolder, must be located the testing partition used to evaluate the accuracy of the logs, a subfolder called generative_models, and another called simulation_models. The generative_models folder contains the best LSTM and GRU models found with the [DeepGenerator](https://github.com/AdaptiveBProcess/GenerativeLSTM) tool, and the simulation_models folder contains the best data-driven simulation models found with the [Simod](https://github.com/AdaptiveBProcess/Simod) tool. For ease of reproduction, we provide in this repository the folders and models used in the evaluation of the article. Likewise, we provide the complete event logs in the file "complete_logs.zip."
 
 ```
 input_files
 +-- Production
 |   +-- Production_testing.csv
 |   +-- generative_models
-|   |   +-- lstm_model.h5
-|   |   +-- gru_model.h5
+|   |   +-- model_folder
+|   |   |   +-- parameters
+|   |   |   +-- model.h5
 |   +-- simulation_models
-|   |   +-- Production.bpmn
+|   |   +-- model_folder
+|   |   |   +-- Production.bpmn
 ```
 
 ## Running the script
