@@ -1,4 +1,4 @@
-# Reproductibility package for the DDS vs DL article
+# Reproducibility package for the DDS vs DDL article
 
 This repository contains the source code for reproducing the results of the paper "Discovering Generative Models from Event Logs: Data-driven Simulation vs. Deep Learning."  This paper compared two families of generative process simulation models developed in previous work: data-driven simulation models and deep learning models. Until now, these two approaches have evolved independently, and their relative performance has not been studied.
 
